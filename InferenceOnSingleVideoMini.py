@@ -158,6 +158,7 @@ def interate_video_and_predict(filepath, network, annotation_converter, start_fr
 
             fontColor = (60 + 100 - top1_class_conf_percent, 1.8 * top1_class_conf_percent, 0)
 
+            #Annotate the Frame
             image_without_text = image
             image = ProcessingUtilsMini.add_text_to_image(image, "Frame nr: {}".format(count),
                                                           bottomLeftCornerOfText=(10, 20), fontScale=0.85)
@@ -169,11 +170,11 @@ def interate_video_and_predict(filepath, network, annotation_converter, start_fr
                                                           bottomLeftCornerOfText=(10, np.shape(image)[0] - 15),
                                                           fontColor=fontColor,
                                                           lineType=1, fontScale=0.85, font=cv2.FONT_HERSHEY_DUPLEX)
-
+            #Display the Frame (Optional)
             if (visualize):
                 cv2.imshow('Video Frame ', image)
                 cv2.waitKey(waitKey)
-
+            #Save the Frame to Output Video
             if (video_path_out):
 
                 if vidwriter is None:
@@ -186,7 +187,8 @@ def interate_video_and_predict(filepath, network, annotation_converter, start_fr
 
         count = count + 1
         print("Current frame number: {}/{}".format(count, n_frames))
-        # If there are no more frames left
+        # If there are no more frames left release the resources
+        # Stops processing after the specified number of frames (video_length)
         if (count > video_length - 1):
 
             cap.release()
@@ -194,7 +196,6 @@ def interate_video_and_predict(filepath, network, annotation_converter, start_fr
                 vidwriter.release()
 
             break
-
 
 def load_model(trained_model_path, annotation_converter_path, cuda_active=True):
     annotation_converter = pkl.load(open(annotation_converter_path, 'rb'))
@@ -239,9 +240,9 @@ def test_run_inference_on_video_chunk():
                                                                                cuda_active=cuda_active)
 
     # Print all predictions sorted by confidence
-    ranks = np.argsort(list(all_class_conf.values()))[::-1]
-    classes_sorted = np.asarray(list(all_class_conf.keys()))[ranks]
-    conf_sorted = np.asarray(list(all_class_conf.values()))[ranks]
+    ranks = np.argsort(list(all_class_conf.values()))[::-1]  # extract confidence scores and sort indices in descending order of confidence 
+    classes_sorted = np.asarray(list(all_class_conf.keys()))[ranks] #Classes sorted by confidence
+    conf_sorted = np.asarray(list(all_class_conf.values()))[ranks] #Corresponding confidence scores
 
     for i in range(len(conf_sorted)):
         print("{}) {} - {}".format(i + 1, classes_sorted[i], conf_sorted[i]))
