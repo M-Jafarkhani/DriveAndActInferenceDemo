@@ -1,2 +1,4 @@
 /test_data
+predictions.log
+*.mp4
 .DS_Store
