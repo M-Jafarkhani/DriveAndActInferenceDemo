@@ -99,6 +99,15 @@ class Metric:
                 iou_scores.append(iou)
 
         return sum(iou_scores) / len(iou_scores) if iou_scores else 0.0
+    
+    def evaluate(self):
+        midpoint_accuracy = self.midpoint_hit_criteria()
+        mean_iou = self.iou()
+
+        return {
+            "Midpoint Hit Accuracy": midpoint_accuracy,
+            "Mean IoU": mean_iou
+        }
 
     
 
@@ -110,5 +119,5 @@ if __name__ == "__main__":
     
     # Initialize and evaluate metrics
     metrics = Metric(ground_truth_csv, prediction_log, file_id)
-    print(metrics.midpoint_hit_criteria())
-    print(metrics.iou())
+    results = metrics.evaluate()
+    print(results)
