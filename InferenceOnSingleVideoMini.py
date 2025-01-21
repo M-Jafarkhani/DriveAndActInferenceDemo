@@ -15,8 +15,8 @@ Preforms a single inference forward pass given a video chunk (array of images)
 Arguments:
     images: numpy array of images (video chunk), dimensionality TxHxWxC, first dimension is the time
     network: a pytorch model
-    annotation_converter: an array of strings for mapping predicted IDs to class names (see load_model function, whichreads the annotation converter)
-    cuda_active (optional): default - True
+    annotation_converter: an array of strings for mapping predicted IDs to class names (see load_model function, which reads the annotation converter)
+    cuda_active (optional): default - True ( the model is moved to the GPU.)
     reset_transform (torchvision.transform, optional): default - None. Resets the default transform with the specified reset_transform, if it is not None.
 
 Returns: top1_class, top1_class_conf, all_class_conf
@@ -26,38 +26,37 @@ Returns: top1_class, top1_class_conf, all_class_conf
 
 """
 
-
 def run_inference_on_video_chunk(images, network, annotation_converter, cuda_active=True, reset_transform=None):
     if (reset_transform):
         transform = reset_transform
-    else:  # default transform
+    else:  # default transform 
         transform = torchvision.transforms.Compose([
-            ProcessingUtilsMini.Rescale(size=(252, 256)),
-            ProcessingUtilsMini.RandomSelect(n=32),
-            ProcessingUtilsMini.CenterCrop(height=224, width=224),
-            ProcessingUtilsMini.normalizeColorInputZeroCenterUnitRange(),
-            ProcessingUtilsMini.ToTensor()
+            ProcessingUtilsMini.Rescale(size=(252, 256)), #Resize frames
+            ProcessingUtilsMini.RandomSelect(n=32), #Randomly select n=32 frames if more frames provided 
+            ProcessingUtilsMini.CenterCrop(height=224, width=224), #Crop frames to (224, 224)
+            ProcessingUtilsMini.normalizeColorInputZeroCenterUnitRange(), #Scale pixel values to the range [-1, 1]
+            ProcessingUtilsMini.ToTensor() #Convert the NumPy array to a PyTorch tensor
         ])
 
-    images_transformed = transform(np.asarray(images))
-    images_transformed = images_transformed.unsqueeze(0)
+    images_transformed = transform(np.asarray(images)) #Converts the input images to a NumPy array and applies the preprocessing pipeline
+    images_transformed = images_transformed.unsqueeze(0) #Shape after unsqueeze(0): (1, C, T, H, W)
 
     if cuda_active:
         images_transformed = Variable(images_transformed.cuda())
-        outputs = network(images_transformed).cuda()
+        outputs = network(images_transformed).cuda()  #pass the transformed input to the model 
         outputs = np.squeeze(outputs.data.cpu().numpy())
     else:
         images_transformed = Variable(images_transformed)
         outputs = network(images_transformed)
-        outputs = np.squeeze(outputs.data.numpy())
+        outputs = np.squeeze(outputs.data.numpy()) #Converts predictions to a NumPy array and removes extra dimensions.
 
-    out_class_id = np.argmax(outputs)
-    top1_class_conf = np.max(outputs)
+    out_class_id = np.argmax(outputs)   # Index of the class with the highest score
+    top1_class_conf = np.max(outputs)   # Confidence of the highest score
 
-    top1_class = annotation_converter[out_class_id]
-    all_class_conf = dict(zip(annotation_converter, outputs))
+    top1_class = annotation_converter[out_class_id] #Convert the out_class_id to a human-readable activity using the annotation_converter.
+    all_class_conf = dict(zip(annotation_converter, outputs)) #dictionary mapping all class indices to their confidence scores
 
-    return top1_class, top1_class_conf, all_class_conf
+    return top1_class, top1_class_conf, all_class_conf 
 
 
 """
@@ -102,8 +101,9 @@ def load_video_segment(filepath, start_frame=0, n_frames=0, visualize=False, wai
 
 
 """
-Iterate through a video file, compute activity predictions and visualize them in the video 
-
+Iterate through a video file frame by frame, compute activity predictions and visualize them in the video 
+Maintains buffer frames, uses pretrained I3D model to predict activities for the buffered frames.
+Anotates the frames.
 Arguments:
     filepath: path for the video file
     network: a pytorch model
@@ -127,34 +127,32 @@ def interate_video_and_predict(filepath, network, annotation_converter, start_fr
                                waitKey=100,
                                buffer_size=32, cuda_active=True, frequency=1, video_path_out=None, out_fps=15,
                                vidwriter=None):
-    cap = cv2.VideoCapture(filepath)
+    cap = cv2.VideoCapture(filepath)  #Opens the video file using OpenCV
 
-    if (start_frame > 0):
+    if (start_frame > 0):  #If start_frame is specified, skips frames until the start_frame
         cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame);
 
     # Interate over frames in video
-    images = []
+    images = []   #A buffer to store frames
 
     count = 0
     if (n_frames > 0):
-        video_length = n_frames
+        video_length = n_frames         #If n_frames is provided, processes exactly n_frames frames
     else:
-        video_length = int(cap.get(cv2.CAP_PROP_FRAME_COUNT)) - start_frame - 1
+        video_length = int(cap.get(cv2.CAP_PROP_FRAME_COUNT)) - start_frame - 1  #processes all frames from start_frame to the end of the video
     if (video_path_out):
         os.makedirs(os.path.dirname(video_path_out), exist_ok=True)
-    while cap.isOpened():
-        # Extract the frame
+    while cap.isOpened(): # Extract the frame
         ret, image = cap.read()
 
-        images.append(image)
+        images.append(image)  #Adds the current frame to the images buffer
         if len(images) > buffer_size:
-            images = images[len(images) - buffer_size:len(images)]
+            images = images[len(images) - buffer_size:len(images)]  #Trims the buffer to ensure it contains at most buffer_size frames.
 
-        if count % frequency == 0:
+        if count % frequency == 0: # (frequency = 1, predictions are made for every frame)
 
             top1_class, top1_class_conf, all_class_conf = run_inference_on_video_chunk(images, network,
-                                                                                       annotation_converter,
-                                                                                       cuda_active=cuda_active)
+                                                                                       annotation_converter,                                                                           cuda_active=cuda_active)
 
             top1_class_conf_percent = round(100 * top1_class_conf, 2)
 
@@ -249,8 +247,11 @@ def test_run_inference_on_video_chunk():
         print("{}) {} - {}".format(i + 1, classes_sorted[i], conf_sorted[i]))
 
 
-def test_interate_video_and_predict(filepath_video="./test_data/run1b_2018-05-29-14-02-47.kinect_color.mp4", video_path_out = "./test_data/output.mp4",
-                                    start_frame=100, n_frames=200, cuda_active = True):
+def test_interate_video_and_predict(filepath_video="./test_data/run1b_2018-05-29-14-02-47.kinect_color.mp4", 
+                                    video_path_out = "./test_data/output.mp4",
+                                    start_frame=100,
+                                    n_frames=200,
+                                    cuda_active = True):
     """
     Iteratively process and predict over a video using a pre-trained model.
     Improtant: if n_frames = 0 - the whole video is processed!
@@ -259,29 +260,36 @@ def test_interate_video_and_predict(filepath_video="./test_data/run1b_2018-05-29
     filepath_video (str): Path to the video file to be processed.
     start_frame (int): The frame number from where to start the prediction.
     n_frames (int): The number of frames to process and predict. Improtant: if 0 - the whole video is processed!
-
     Returns:
     None - Depending on the function's parameters, it may save a video with predictions or display the visualization.
+    best_model.pth contains the pretrained weights for the I3D model
+    ( weights were on the Drive&Act dataset and were fine-tuned after pretraining on Kinetics)
     """
+    
 
 
     # Load the model
-    trained_model_path = "./demo_models/best_model.pth"
+    trained_model_path = "./d emo_models/best_model.pth"  
     annotation_converter_path = "./demo_models/annotation_converter.pkl"
     network, annotation_converter = load_model(trained_model_path, annotation_converter_path, cuda_active=cuda_active)
 
-
-    # Predict for first 1000 frames
     #Note: out_fps must be 15 for RGB videos!
-    interate_video_and_predict(filepath_video, network=network, annotation_converter=annotation_converter,
-                               start_frame=start_frame, n_frames=n_frames, visualize=False, waitKey=100,
-                               buffer_size=32, cuda_active=cuda_active, frequency=1, video_path_out=video_path_out,
+    interate_video_and_predict(filepath_video, 
+                               network=network, 
+                               annotation_converter=annotation_converter,
+                               start_frame=start_frame, 
+                               n_frames=n_frames, visualize=False, waitKey=100,
+                               buffer_size=32, cuda_active=cuda_active, 
+                               frequency=1, video_path_out=video_path_out,
                                out_fps=15)
 
 
 if __name__ == '__main__':
 
-    test_interate_video_and_predict(filepath_video="./test_data/run1b_2018-05-29-14-02-47.kinect_color.mp4", video_path_out = "./test_data/output_2.mp4",
-                                    start_frame=0, n_frames=0, cuda_active = False)
+    test_interate_video_and_predict(filepath_video="./test_data/run1b_2018-05-29-14-02-47.kinect_color.mp4", 
+                                    video_path_out = "./test_data/output_2.mp4", #Path to save the output video with predictions
+                                    start_frame=0, 
+                                    n_frames=0,  #Process the entire video
+                                    cuda_active = False)
 
     print("Done.")
