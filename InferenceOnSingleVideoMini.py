@@ -270,7 +270,7 @@ def test_interate_video_and_predict(filepath_video="./test_data/run1b_2018-05-29
 
 
     # Load the model
-    trained_model_path = "./d emo_models/best_model.pth"  
+    trained_model_path = "./demo_models/best_model.pth"  
     annotation_converter_path = "./demo_models/annotation_converter.pkl"
     network, annotation_converter = load_model(trained_model_path, annotation_converter_path, cuda_active=cuda_active)
 

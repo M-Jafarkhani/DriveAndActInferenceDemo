@@ -29,7 +29,11 @@ Run Predictions: The buffered frames are passed to the I3D model to predict acti
 Annotate Frames: Each frame is overlaid with predictions (e.g., activity and confidence score).  
 Save/Visualize: Annotated frames are saved to an output video or displayed.    
 
-#### Prequisites
-pip install torch torchvision opencv-python numpy
-pip install pillow
+#### Prequisites  
+pip install torch torchvision opencv-python numpy  
+pip install pillow  
+
+#### Execution
+python InferenceOnSingleVideoMini.py  
+The script processes a video and generates predictions.
 
