@@ -42,7 +42,7 @@ def sliding_window_inference(video_path, model_path, annotation_path, log_file, 
     # Create a video writer for output
     output_path = "./annotated_output.mp4"
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    out_fps = 30
+    out_fps = 15
     height, width, _ = frames[0].shape
     video_writer = cv2.VideoWriter(output_path, fourcc, out_fps, (width, height))
 
@@ -80,7 +80,7 @@ def sliding_window_inference(video_path, model_path, annotation_path, log_file, 
 
 if __name__ == "__main__":
     # Define paths
-    video_path = "./run1b_2018-05-29-14-02-47.kinect_color.mp4"
+    video_path = "./data/run1b_2018-05-29-14-02-47.kinect_color.mp4"
     model_path = "./demo_models/best_model.pth"
     annotation_path = "./demo_models/annotation_converter.pkl"
     log_file = "./predictions.log"
