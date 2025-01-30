@@ -52,7 +52,7 @@ def sliding_window_inference(video_path, model_path, annotation_path, log_file, 
     # Create a video writer for output
     output_path = "./annotated_output.mp4"
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    out_fps = 30
+    out_fps = 30  # check on thisss. 
     height, width, _ = frames[0].shape
     video_writer = cv2.VideoWriter(output_path, fourcc, out_fps, (width, height))
 

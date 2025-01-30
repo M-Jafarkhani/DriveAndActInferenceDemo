@@ -3,3 +3,4 @@ predictions.log
 *.mp4
 .DS_Store
 annotated_output
+segmented_activities.csv
