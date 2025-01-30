@@ -77,7 +77,7 @@ class Metric:
     def evaluate_multiclass(self):
         # Initialize metrics for each activity
         metrics = {cls: {'tp': 0, 'fp': 0, 'fn': 0} for cls in self.activity_classes}
-        matched_chunks = set()  # Tracks matched ground truth chunks (annotation_id, chunk_id)
+        matched_chunks = set()
 
         # Iterate over predicted segments
         for _, pred in self.segmented_predictions.iterrows():
@@ -90,22 +90,22 @@ class Metric:
 
             match_found = False
             for _, gt in self.ground_truth.iterrows():
-                chunk_key = (gt['annotation_id'], gt['chunk_id'])  # Unique identifier for ground truth chunks
+                chunk_key = (gt['annotation_id'], gt['chunk_id'])
 
                 # Check if the prediction matches this ground truth chunk
                 if gt['activity'] == pred_activity and gt['frame_start'] <= pred_midpoint <= gt['frame_end']:
                     if chunk_key not in matched_chunks:
-                        metrics[pred_activity]['tp'] += 1  # True Positive
-                        matched_chunks.add(chunk_key)  # Mark this chunk as matched
+                        metrics[pred_activity]['tp'] += 1
+                        matched_chunks.add(chunk_key)
                         match_found = True
                         break
                     else:
-                        metrics[pred_activity]['fp'] += 1  # False Positive for duplicate detection
+                        metrics[pred_activity]['fp'] += 1
                         match_found = True
 
             if not match_found:
                 if pred_activity in metrics:
-                    metrics[pred_activity]['fp'] += 1  # False Positive for unmatched prediction
+                    metrics[pred_activity]['fp'] += 1
 
         # Count False Negatives (ground truth chunks without a match)
         for _, gt in self.ground_truth.iterrows():
@@ -120,8 +120,8 @@ class Metric:
             fp = metrics[cls]['fp']
             fn = metrics[cls]['fn']
 
-            precision[cls] = tp / (tp + fp) * 100 if (tp + fp) > 0 else 0  # Convert to percentage
-            recall[cls] = tp / (tp + fn) * 100 if (tp + fn) > 0 else 0  # Convert to percentage
+            precision[cls] = tp / (tp + fp) * 100 if (tp + fp) > 0 else 0 
+            recall[cls] = tp / (tp + fn) * 100 if (tp + fn) > 0 else 0
 
         # Calculate overall Precision and Recall
         overall_tp = sum(metrics[cls]['tp'] for cls in self.activity_classes)
