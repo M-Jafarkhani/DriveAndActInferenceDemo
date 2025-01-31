@@ -10,7 +10,7 @@ class Metric:
         self.segmented_predictions = self.convert_predictions_to_segments(self.predictions)
         self.file_id = file_id
         self.activity_classes = list(self.ground_truth['activity'].dropna().unique())
-        self.filtered_df = self.ground_truth[self.ground_truth['file_id'] == file_id]
+        self.filtered_ground_truth = self.ground_truth[self.ground_truth['file_id'] == file_id]
     
     @staticmethod
     def parse_predictions(log_file):
@@ -76,13 +76,13 @@ class Metric:
     
     
     def evaluate_multiclass(self):
-        all_activities = set(self.filtered_df['activity']).union(set(self.segmented_predictions['activity']))
+        all_activities = set(self.filtered_ground_truth['activity']).union(set(self.segmented_predictions['activity']))
 
         # Initialize metrics for all known activities
         metrics = {cls: {'tp': 0, 'fp': 0, 'fn': 0} for cls in all_activities}
         matched_chunks = set()  
         
-        for _, gt in self.filtered_df.iterrows():
+        for _, gt in self.filtered_ground_truth.iterrows():
             gt_start = gt['frame_start']
             gt_end = gt['frame_end']
             gt_activity = gt['activity']
@@ -175,51 +175,50 @@ class Metric:
         """
         iou_scores = []
 
-        for _, row in self.ground_truth.iterrows():
+        for _, row in self.filtered_ground_truth.iterrows():
             # Get the frame range for the activity
             gt_start = row['frame_start']
             gt_end = row['frame_end']
             activity = row['activity']
-            file_id = row['file_id']
             
-            if self.file_id == file_id:
-                # Find all predicted frames that match the activity
-                predicted_frames = [
-                    idx for idx, (predicted_activity, _) in self.predictions.items()
-                    if predicted_activity == activity and gt_start <= idx <= gt_end
-                ]
+            # Find all predicted frames that match the activity
+            predicted_frames = self.predictions[
+                                    (self.predictions["activity"] == activity) & 
+                                    (self.predictions["frame"] >= gt_start) & 
+                                    (self.predictions["frame"] <= gt_end)
+                                ]["frame"].tolist()
 
 
-                if not predicted_frames:
-                    iou_scores.append(0)
-                    continue
+            if not predicted_frames:
+                iou_scores.append(0)
+                continue
 
-                # Calculate intersection and union
-                pred_start = min(predicted_frames)
-                pred_end = max(predicted_frames)
+            # Calculate intersection and union
+            pred_start = min(predicted_frames)
+            pred_end = max(predicted_frames)
 
-                intersection_start = max(gt_start, pred_start)
-                intersection_end = min(gt_end, pred_end)
-                intersection = max(0, intersection_end - intersection_start + 1)
+            intersection_start = max(gt_start, pred_start)
+            intersection_end = min(gt_end, pred_end)
+            intersection = max(0, intersection_end - intersection_start + 1)
 
-                union_start = min(gt_start, pred_start)
-                union_end = max(gt_end, pred_end)
-                union = max(0, union_end - union_start + 1)
+            union_start = min(gt_start, pred_start)
+            union_end = max(gt_end, pred_end)
+            union = max(0, union_end - union_start + 1)
 
-                iou = intersection / union if union > 0 else 0
-                iou_scores.append(iou)
+            iou = intersection / union if union > 0 else 0
+            iou_scores.append(iou)
 
         return sum(iou_scores) / len(iou_scores) if iou_scores else 0.0
     
     def evaluate(self):
-        midpoint_accuracy = self.midpoint_hit_criteria()
         mean_iou = self.iou()
+        precision, recall, overall_precision, overall_recall = self.evaluate_multiclass()
 
-        return {
-            "Midpoint Hit Accuracy": midpoint_accuracy,
-            "Mean IoU": mean_iou
-        }
-
+        print("Precision per class (%):", {cls: f"{precision[cls]:.2f}%" for cls in precision})
+        print("Recall per class (%):", {cls: f"{recall[cls]:.2f}%" for cls in recall})
+        print(f"Overall Precision: {overall_precision:.2f}%")
+        print(f"Overall Recall: {overall_recall:.2f}%")
+        print(f"Mean IoU: {mean_iou*100:.2f}%")
     
 
 if __name__ == "__main__":
@@ -230,12 +229,4 @@ if __name__ == "__main__":
     
     # Initialize and evaluate metrics
     metrics = Metric(ground_truth_csv, prediction_log, file_id)
-    # results = metrics.evaluate()
-    # print(results)
-    
-    precision, recall, overall_precision, overall_recall = metrics.evaluate_multiclass()
-
-    print("Precision per class (%):", {cls: f"{precision[cls]:.2f}%" for cls in precision})
-    print("Recall per class (%):", {cls: f"{recall[cls]:.2f}%" for cls in recall})
-    print(f"Overall Precision: {overall_precision:.2f}%")
-    print(f"Overall Recall: {overall_recall:.2f}%")
+    results = metrics.evaluate()
