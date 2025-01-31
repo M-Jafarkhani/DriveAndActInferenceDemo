@@ -120,12 +120,14 @@ if __name__ == "__main__":
     parser.add_argument("--model_path", required=True)
     parser.add_argument("--annotation_path", required=True)
     parser.add_argument("--log_file", required=True)
+    parser.add_argument("--window_size", type=int, required=True, help="Sliding window size")
+
     args = parser.parse_args()
     sliding_window_inference(video_path=args.video_path, 
                              model_path=args.model_path, 
                              annotation_path=args.annotation_path, 
                              log_file=args.log_file,
-                             window_size=16,
+                             window_size=args.window_size,  # Use the user-specified window size
                              stride=1,
                              resize=(224, 224),
                              cuda_active=True)
