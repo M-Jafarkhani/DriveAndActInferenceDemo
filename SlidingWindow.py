@@ -1,4 +1,5 @@
 import logging
+import argparse
 import cv2
 from InferenceOnSingleVideoMini import load_model, load_video_segment, run_inference_on_video_chunk
 
@@ -114,20 +115,17 @@ def sliding_window_inference(video_path, model_path, annotation_path, log_file, 
     logging.info("Inference complete. Predictions logged successfully.")
 
 if __name__ == "__main__":
-    # Define paths
-    video_path = "./data/run1b_2018-05-29-14-02-47.kinect_color.mp4"
-    model_path = "./demo_models/best_model.pth"
-    annotation_path = "./demo_models/annotation_converter.pkl"
-    log_file = "./predictions.log"
-
-    # Perform sliding window inference and log predictions
-    sliding_window_inference(
-        video_path=video_path,
-        model_path=model_path,
-        annotation_path=annotation_path,
-        log_file=log_file,
-        window_size=16,
-        stride=1,
-        resize=(224, 224),
-        cuda_active=True
-    )
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--video_path", required=True)
+    parser.add_argument("--model_path", required=True)
+    parser.add_argument("--annotation_path", required=True)
+    parser.add_argument("--log_file", required=True)
+    args = parser.parse_args()
+    sliding_window_inference(video_path=args.video_path, 
+                             model_path=args.model_path, 
+                             annotation_path=args.annotation_path, 
+                             log_file=args.log_file,
+                             window_size=16,
+                             stride=1,
+                             resize=(224, 224),
+                             cuda_active=True)

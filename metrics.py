@@ -1,5 +1,5 @@
 import pandas as pd
-import re
+import argparse
 
 class Metric:
     """Utility class for different metrics"""
@@ -222,11 +222,17 @@ class Metric:
     
 
 if __name__ == "__main__":
-    # Define file paths
-    ground_truth_csv = "./data/midlevel.chunks_90.split_0.train.csv"
-    prediction_log = "./predictions.log"
-    file_id = "vp1/run1b_2018-05-29-14-02-47.kinect_color"
-    
-    # Initialize and evaluate metrics
-    metrics = Metric(ground_truth_csv, prediction_log, file_id)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--ground_truth", required=True, help="Path to the ground truth CSV file")
+    parser.add_argument("--prediction_log", required=True, help="Path to the prediction log file")
+    parser.add_argument("--file_id", required=True, help="File ID to process")
+    parser.add_argument("--output_file", required=True, help="Path to save the evaluation results")
+    args = parser.parse_args()
+
+    metrics = Metric(args.ground_truth, args.prediction_log, args.file_id)
     results = metrics.evaluate()
+    
+    with open(args.output_file, 'w') as f:
+        for key, value in results.items():
+            f.write(f"{key}: {value}\n")
+    print(f"Metrics evaluation saved to {args.output_file}")
