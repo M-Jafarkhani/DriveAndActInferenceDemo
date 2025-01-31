@@ -30,10 +30,10 @@ for BASE_VIDEO in "${BASE_VIDEO_PATHS[@]}"; do
     echo "Processing video: $VIDEO_PATH"
     
     # Run sliding window inference
-    python3 SlidingWindow.py --video_path "$VIDEO_PATH" --model_path "$MODEL_PATH" --annotation_path "$ANNOTATION_PATH" --log_file "$LOG_FILE"
+    python SlidingWindow.py --video_path "$VIDEO_PATH" --model_path "$MODEL_PATH" --annotation_path "$ANNOTATION_PATH" --log_file "$LOG_FILE"
     
     # Run metrics evaluation
-    python3 Metrics.py --ground_truth "$DATA_FOLDER/midlevel.chunks_90.split_0.test.csv" --prediction_log "$LOG_FILE" --file_id "$BASE_VIDEO" > "$METRICS_OUTPUT"
+    python Metrics.py --ground_truth "$DATA_FOLDER/midlevel.chunks_90.split_0.test.csv" --prediction_log "$LOG_FILE" --file_id "$BASE_VIDEO" > "$METRICS_OUTPUT"
     
     echo "Metrics saved to: $METRICS_OUTPUT"
 done
