@@ -10,6 +10,7 @@ class Metric:
         self.segmented_predictions = self.convert_predictions_to_segments(self.predictions)
         self.file_id = file_id
         self.activity_classes = list(self.ground_truth['activity'].dropna().unique())
+        self.filtered_df = self.ground_truth[self.ground_truth['file_id'] == file_id]
     
     @staticmethod
     def parse_predictions(log_file):
@@ -75,58 +76,57 @@ class Metric:
     
     
     def evaluate_multiclass(self):
-        # Initialize metrics for each activity
-        metrics = {cls: {'tp': 0, 'fp': 0, 'fn': 0} for cls in self.activity_classes}
-        matched_chunks = set()
+        all_activities = set(self.filtered_df['activity']).union(set(self.segmented_predictions['activity']))
 
-        # Iterate over predicted segments
+        # Initialize metrics for all known activities
+        metrics = {cls: {'tp': 0, 'fp': 0, 'fn': 0} for cls in all_activities}
+        matched_chunks = set()  
+        
+        for _, gt in self.filtered_df.iterrows():
+            gt_start = gt['frame_start']
+            gt_end = gt['frame_end']
+            gt_activity = gt['activity']
+            chunk_key = (gt['annotation_id'], gt['chunk_id'])
+            gt_midpoint = (gt_start + gt_end) // 2
+
+            matched_prediction = self.segmented_predictions[
+                (self.segmented_predictions['frame_start'] <= gt_midpoint) &
+                (self.segmented_predictions['frame_end'] >= gt_midpoint) &
+                (self.segmented_predictions['activity'] == gt_activity)
+            ]
+
+            if not matched_prediction.empty:
+                #  True Positive: A prediction exists for this midpoint
+                if chunk_key not in matched_chunks:
+                    metrics[gt_activity]['tp'] += 1
+                    matched_chunks.add(chunk_key)  
+                else:
+                    metrics[gt_activity]['fp'] += 1
+            else:
+                # False Negative: No correct prediction found for this activity midpoint
+                metrics[gt_activity]['fn'] += 1
+
+        # Count False Positives for unmatched predictions
         for _, pred in self.segmented_predictions.iterrows():
-            pred_start = pred['frame_start']
-            pred_end = pred['frame_end']
             pred_activity = pred['activity']
 
-            # Calculate the midpoint of the prediction
-            pred_midpoint = (pred_start + pred_end) / 2
+            if pred_activity in metrics and metrics[pred_activity]['tp'] > 0:
+                continue
 
-            match_found = False
-            for _, gt in self.ground_truth.iterrows():
-                chunk_key = (gt['annotation_id'], gt['chunk_id'])
+            if pred_activity not in metrics:
+                continue
+            
+            metrics[pred_activity]['fp'] += 1
 
-                # Check if the prediction matches this ground truth chunk
-                if gt['activity'] == pred_activity and gt['frame_start'] <= pred_midpoint <= gt['frame_end']:
-                    if chunk_key not in matched_chunks:
-                        metrics[pred_activity]['tp'] += 1
-                        matched_chunks.add(chunk_key)
-                        match_found = True
-                        break
-                    else:
-                        metrics[pred_activity]['fp'] += 1
-                        match_found = True
-
-            if not match_found:
-                if pred_activity in metrics:
-                    metrics[pred_activity]['fp'] += 1
-
-        # Count False Negatives (ground truth chunks without a match)
-        for _, gt in self.ground_truth.iterrows():
-            chunk_key = (gt['annotation_id'], gt['chunk_id'])
-            if chunk_key not in matched_chunks:
-                metrics[gt['activity']]['fn'] += 1
-
-        # Calculate Precision, Recall for each activity class
         precision, recall = {}, {}
-        for cls in self.activity_classes:
-            tp = metrics[cls]['tp']
-            fp = metrics[cls]['fp']
-            fn = metrics[cls]['fn']
-
-            precision[cls] = tp / (tp + fp) * 100 if (tp + fp) > 0 else 0 
+        for cls in all_activities:
+            tp, fp, fn = metrics[cls]['tp'], metrics[cls]['fp'], metrics[cls]['fn']
+            precision[cls] = tp / (tp + fp) * 100 if (tp + fp) > 0 else 0
             recall[cls] = tp / (tp + fn) * 100 if (tp + fn) > 0 else 0
-
-        # Calculate overall Precision and Recall
-        overall_tp = sum(metrics[cls]['tp'] for cls in self.activity_classes)
-        overall_fp = sum(metrics[cls]['fp'] for cls in self.activity_classes)
-        overall_fn = sum(metrics[cls]['fn'] for cls in self.activity_classes)
+            
+        overall_tp = sum(metrics[cls]['tp'] for cls in all_activities)
+        overall_fp = sum(metrics[cls]['fp'] for cls in all_activities)
+        overall_fn = sum(metrics[cls]['fn'] for cls in all_activities)
 
         overall_precision = overall_tp / (overall_tp + overall_fp) * 100 if (overall_tp + overall_fp) > 0 else 0
         overall_recall = overall_tp / (overall_tp + overall_fn) * 100 if (overall_tp + overall_fn) > 0 else 0
