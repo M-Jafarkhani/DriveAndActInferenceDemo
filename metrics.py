@@ -13,34 +13,38 @@ class Metric:
         self.filtered_ground_truth = self.ground_truth[self.ground_truth['file_id'] == file_id]
     
     @staticmethod
+    
     def parse_predictions(log_file):
         predictions = []
         with open(log_file, 'r') as file:
             for line in file:
                 try:
-                    # Split the line to extract frame and activity information
-                    parts = line.strip().split(' - ')  
-                    frame_part = parts[1].split(': ')[0]  
-                    frame = int(frame_part.split()[1])
-                    
-                    # Extract activity and confidence
-                    activity_part = parts[1].split(': ', maxsplit=1)[1] 
-                    activity = activity_part.split(', Confidence')[0].replace("Predicted Activity: ", "").strip() 
-                    
-                    # Extract confidence if it exists
-                    confidence = 0.0  # Default confidence
-                    if "Confidence" in activity_part:  # Check if "Confidence" exists in the string
-                        confidence = float(activity_part.split('Confidence: ')[1].strip('%'))  # Extract confidence as float
+                    # Ensure the line contains the necessary components
+                    if not line.startswith("Frame") or "Predicted Activity:" not in line or "Confidence:" not in line:
+                        print(f"Skipping malformed line: {line.strip()}")
+                        continue
 
-                    # Append to predictions list
+                    # Extract frame number
+                    frame = int(line.split(":")[0].replace("Frame", "").strip())
+
+                    # Extract activity
+                    activity = line.split("Predicted Activity: ")[1].split(", Confidence")[0].strip()
+
+                    # Extract confidence
+                    confidence_str = line.split("Confidence: ")[1].strip().replace("%", "")
+                    confidence = float(confidence_str)
+
                     predictions.append({'frame': frame, 'activity': activity, 'confidence': confidence})
-                
+
                 except (IndexError, ValueError) as e:
                     print(f"Skipping line due to error: {line.strip()} -> {e}")
 
-        # Convert predictions to DataFrame
-        return pd.DataFrame(predictions)
-    
+        df = pd.DataFrame(predictions)
+        print("Parsed Predictions DataFrame Columns:", df.columns)  # Debugging
+        #print(df.head())  # Show first few rows for verification
+
+        return df
+
     @staticmethod
     def convert_predictions_to_segments(predictions):
         segments = []
@@ -219,7 +223,16 @@ class Metric:
         print(f"Overall Precision: {overall_precision:.2f}%")
         print(f"Overall Recall: {overall_recall:.2f}%")
         print(f"Mean IoU: {mean_iou*100:.2f}%")
-    
+
+    #  Return results as a dictionary
+        return {
+        "Precision per class (%)": {cls: f"{precision[cls]:.2f}%" for cls in precision},
+        "Recall per class (%)": {cls: f"{recall[cls]:.2f}%" for cls in recall},
+        "Overall Precision": f"{overall_precision:.2f}%",
+        "Overall Recall": f"{overall_recall:.2f}%",
+        "Mean IoU": f"{mean_iou*100:.2f}%"
+    }
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
