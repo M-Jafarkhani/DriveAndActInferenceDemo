@@ -49,7 +49,7 @@
   Department of Computer Science\\
   University of Stuttgart\\
   Stuttgart, Germany \\
-  \texttt{---@stud.uni-stuttgart.de} \\
+  \texttt{st187673@stud.uni-stuttgart.de} \\
   \And
   Mugdha Asgekar \\
   Department of Computer Science\\
@@ -130,6 +130,21 @@ We noticed the main reason for misclassfying each frame to its action is either 
     \caption{Accuracy for recognition task with I3D model on all viewpoints and runs on Kinetic Color category, DriveAndAct dataset}
     \label{fig:i3d-acc}
 \end{figure}
+\subsection{Extending I3D Model}
+\subsubsection{Preprocessing}
+The input data utilized in this study was originally trained using the I3D model, which generated class probabilities as output. These probabilities were stored in .pt files for subsequent processing. To prepare the data for our detection model, we computed the argmax of the arrays containing the class probabilities, thereby converting them into discrete class labels. These labels were then used as input for training the detection model.
+
+Due to computational constraints, we processed each video in the dataset individually. The training dataset consisted of 19,071 frames, with each frame represented by an array of 34 class probabilities. Frame-wise annotations were stored in corresponding CSV files, where missing annotations were denoted by a placeholder value of 40.
+
+The preprocessing phase involved converting the class probabilities into discrete labels using the numpy argmax function. Additionally, batch processing techniques were employed to optimize memory usage, ensuring efficient handling of large datasets during training and inference. This approach facilitated the effective training of the detection model while mitigating computational limitations.
+\subsubsection{Model Enhancements and Challenges}
+To enhance accuracy, several advanced model architectures were explored, including transformers, temporal convolutional neural networks (CNNs), and recurrent neural networks (RNNs). A major challenge encountered was aligning the input and target dimensions for loss computation. Additionally, batch size mismatches and tensor shape inconsistencies required careful debugging and adjustments to the data pipeline. Some approaches achieved high training accuracies; however, test accuracy remained significantly lower.
+
+To stabilize training and mitigate overfitting, techniques such as early stopping and batch normalization were implemented. Early stopping prevented unnecessary overtraining by halting training once validation performance plateaued; however, accuracy did not improve. Increasing the training data and performing hyperparameter tuning also had minimal impact. In some cases, modifications to the model architecture even reduced the accuracy of the training.
+
+The transformer-based architecture uses an embedding layer, positional encoding, a stack of Transformer encoder layers, and a final linear layer for classification. If the model needs to consider the entire sequence (e.g., correlations across distant frames), the transformer should excel hence this approach. Training was faster because the sequence is processed as a whole rather than step by step and the self-attention mechanism captured long-range relationships more effectively. However, our training accuracy was very low indicating that our model was not able to learn the features properly.
+
+The Long Short-Term Memory (LSTM) model was configured with one layer. This vanilla LSTM does not include attention mechanisms, which allow the model to selectively focus on specific time steps rather than relying only on the last hidden state. Stacked LSTMs, which use multiple layers, can model more complex temporal hierarchies but come at a higher computational cost. This vanilla LSTM does not include attention mechanisms, which allow the model to selectively focus on specific time steps rather than relying only on the last hidden state. While the LSTM demonstrated promise in capturing temporal relationships within the data, tuning its hyperparameters (e.g., number of layers, hidden units, and learning rate) was critical for optimization. Despite these efforts, overfitting remained a challenge, particularly on smaller subsets of data, necessitating further exploration of regularization techniques. One model configuration achieved a high training accuracy but a very low test accuracy. The best-performing approach, with additional data manipulations, showed negligible improvement. This study does not claim the approach to be entirely correct, as it involved experimental exploration of both the data, the inputs and the models.
 \section{Conclusion}
 
 \bibliographystyle{alpha}
