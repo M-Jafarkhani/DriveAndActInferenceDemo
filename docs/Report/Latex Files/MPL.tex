@@ -31,6 +31,9 @@
 \usepackage{nicefrac}       % compact symbols for 1/2, etc.
 \usepackage{microtype}      % microtypography
 \usepackage{xcolor}         % colors
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{amsmath}
 
 
 \title{Driver Activity Detection}
@@ -91,8 +94,121 @@
 \section{Dataset Overview}
 
 \section{Sliding Window}
+Activity detection in videos is a challenging problem due to the continuous and dynamic nature of video data. Unlike static images, where an object classification model can predict a single label per frame, videos contain temporal dependencies where activities evolve over time.
+
+A direct classification approach—where each frame is independently classified—often fails to capture contextual information and temporal dependencies, leading to inaccurate predictions. To address this, we employ a sliding window approach, which allows us to analyze a sequence of frames together rather than in isolation.
+
+The key idea behind this approach is that instead of treating the entire video as a single entity or classifying individual frames separately, we use a fixed-size window that moves over the video, capturing a localized segment at each step. This enables better context preservation and helps improve detection performance.
+
+\subsection{Motivation for Using Sliding Window}
+A video typically consists of thousands of frames, and activities often span across multiple consecutive frames rather than occurring in a single instance. The sliding window approach is designed to address the following challenges:
+\begin{itemize}
+    \item \textbf{Temporal Overlap in Activities}: Many activities start and end gradually rather than having sharp boundaries. Using a window of frames allows the model to capture transitions effectively.
+    \item \textbf{Context Awareness}: Classifying each frame in isolation lacks temporal context. The sliding window approach retains context from nearby frames, helping the model understand activity progression.
+    \item \textbf{Efficiency and Performance Trade-off}: Instead of analyzing every individual frame separately (which would be computationally expensive), grouping frames into a window allows the model to process fewer but more meaningful segments.
+\end{itemize}
+\subsection{Implementation}
+\subsubsection{Window Size and Stride}
+\begin{itemize}
+    \item A \textbf{fixed-size window} (e.g. 8, 16, or 32 frames) is defined, which slides across the video.
+    \item The \textbf{stride} determines how much the window moves forward after each step.
+    \item If the stride is \textbf{small} (e.g., 1 frame), the overlap between windows increases, leading to \textbf{better temporal coverage but higher computational cost}.
+    \item If the stride is \textbf{large} (e.g., 8 frames), fewer windows are processed, reducing computation but potentially \textbf{missing fine-grained transitions}.
+\end{itemize}
+
+\subsubsection{Processing Each Window}
+\begin{itemize}
+    \item Each window of frames is sent as input to a pre-trained I3D model.
+    \item The model infers on the window and predicts the most likely activity to occur in that segment.
+    \item The predicted label is assigned to each frame of the window, along with the confidence scores.
+    \item The activity with the highest confidence score is selected for each frame.
+    \item As the window progresses, new predictions are generated, leading to a continuous activity timeline.
+\end{itemize}
+
+\begin{figure}[h]
+    \centering
+    \begin{subfigure}{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figs/DAR1.png}
+        \caption{Opening door outside}
+    \end{subfigure}
+    \hspace{0.5cm}
+    \begin{subfigure}{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figs/DAR2.png}
+        \caption{Fastening Seat Belt}
+    \end{subfigure}
+
+    \vspace{0.5cm}
+
+    \begin{subfigure}{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figs/DAR3.png}
+        \caption{Working on Laptop}
+    \end{subfigure}
+    \hspace{0.5cm}
+    \begin{subfigure}{0.45\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figs/DAR4.png}
+        \caption{Using Multimedia Display}
+    \end{subfigure}
+
+    \caption{Grid for multiple predictions using Sliding Window.}
+    \label{fig:image-grid}
+\end{figure}
 
 \section{Metrics}
+Evaluating activity detection models requires quantitative metrics that measure how well predictions align with ground truth activities. One of the objectives involved was to develop metrics for the sliding window approach to understand how accurate are the predictions. We employ two key metrics as mentioned in the next sections.
+
+\subsection{Midpoint Hit Criteria}
+
+To determine whether a prediction is correct, we used the \textbf{midpoint hit criteria}. For each ground truth activity segment, we computed its midpoint and checked if a predicted segment of the same activity class covered this midpoint. The evaluation steps are as follows:
+
+\begin{itemize}
+    \item Compute the \textbf{midpoint} of each ground truth segment as:
+    \begin{equation}
+        \text{midpoint} = \frac{\text{frame\_start} + \text{frame\_end}}{2}
+    \end{equation}
+    \item A prediction is counted as a \textbf{true positive (TP)} if it covers the midpoint and belongs to the correct activity class.
+    \item If no prediction matches the midpoint, it is considered a \textbf{false negative (FN)}.
+    \item Any extra predicted segments that do not match a ground truth midpoint count as \textbf{false positives (FP)}.
+    \item Precision and recall for each activity class are calculated as:
+    \begin{equation}
+        \text{Precision} = \frac{TP}{TP + FP} \times 100
+    \end{equation}
+    \begin{equation}
+        \text{Recall} = \frac{TP}{TP + FN} \times 100
+    \end{equation}
+    \item Overall precision and recall are computed by aggregating across all activity classes.
+\end{itemize}
+
+\subsection{Intersection over Union (IoU)}
+
+To measure how well the predicted activity windows overlap with the ground truth, we used \textbf{IoU}:
+
+\begin{itemize}
+    \item \textbf{Intersection}: The overlapping frames between the ground truth and predicted segment.
+    \item \textbf{Union}: The total number of frames covered by both segments.
+    \item The IoU score for each ground truth segment is calculated as:
+    \begin{equation}
+        \text{IoU} = \frac{\text{Intersection}}{\text{Union}}
+    \end{equation}
+    \item The \textbf{mean IoU} is obtained by averaging the IoU scores across all ground truth segments.
+\end{itemize}
+
+\subsection{Final Evaluation Results}
+
+The model outputs the following results:
+
+\begin{itemize}
+    \item \textbf{Precision per class (\%)}: Precision values for each activity class.
+    \item \textbf{Recall per class (\%)}: Recall values for each activity class.
+    \item \textbf{Overall Precision}: Aggregated precision across all activities.
+    \item \textbf{Overall Recall}: Aggregated recall across all activities.
+    \item \textbf{Mean IoU}: The average IoU score across all activity segments.
+\end{itemize}
+
+These metrics provide a comprehensive evaluation of the accuracy and localization performance of the model.
 
 \section{Neural Detection Model}
 Manuel and Roitberg \cite{drive_and_act_2019_iccv} evaluated various models for fine-grained driver activity recognition using the DriveAndAct dataset. They tested different approaches, including CNN-based methods (like C3D, P3D ResNet, and I3D) and body pose-based methods. They found out that the Inflated 3D ConvNet (I3D), an extension of the Inception-v1 network with 3D convolutions, achieved the highest accuracy (69.57\% on Validation, and 63.64\% on test) among all tested models for recognizing fine-grained driver activities.
