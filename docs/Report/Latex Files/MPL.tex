@@ -79,20 +79,40 @@
 
 
 \begin{abstract}
-  The abstract paragraph should be indented \nicefrac{1}{2}~inch (3~picas) on
-  both the left- and right-hand margins. Use 10~point type, with a vertical
-  spacing (leading) of 11~points.  The word \textbf{Abstract} must be centered,
-  bold, and in point size 12. Two line spaces precede the abstract. The abstract
-  must be limited to one paragraph.
+Driver activity detection in videos presents unique challenges due to the temporal dependencies inherent in video data. This report addresses these challenges by employing a sliding window approach to analyze sequences of frames, which helps to preserve context and improve detection performance. This method uses a fixed-size window that moves across the video, capturing localized segments. Each window is then processed using a pre-trained I3D model to predict the activity. Model performance is evaluated using metrics such as the midpoint hit criteria and Intersection over Union (IoU). The I3D model, a deep learning architecture that extends 2D convolutional neural networks into 3D, is used to capture spatiotemporal features, achieving an average accuracy of 82.26\%. The study also explores advanced model architectures like transformers, temporal CNNs, and recurrent neural networks (RNNs) to further enhance accuracy. Our code and experiment results are available on
+the \href{https://github.com/M-Jafarkhani/DriveAndActInferenceDemo}{GitHub}.
 \end{abstract}
 
 
 \section{Introduction}
 
-\section{Project Workflow}
+Activity detection in videos is a challenging problem because videos contain temporal dependencies where activities evolve over time. Unlike static images, where an object classification model can predict a single label per frame, videos require models to understand the progression of actions. A direct classification approach, where each frame is independently classified, often fails to capture contextual information and temporal dependencies, leading to inaccurate predictions. To solve this problem, we employed a sliding window approach, which makes it possible to analyze a sequence of frames together rather than in isolation. The key idea behind the sliding window approach is to use a fixed-size window that moves over the video, capturing a localized segment at each step. This enables better context preservation and helps improve detection performance. A video typically consists of thousands of frames, and activities often span across multiple consecutive frames rather than occurring in a single instance. Using a window of frames allows the model to capture transitions effectively. The sliding window approach retains context from nearby frames, helping the model understand activity progression. Grouping frames into a window allows the model to process fewer but more meaningful segments, which is more efficient.
 
 \section{Dataset Overview}
 
+The Drive\&Act dataset \cite{drive_and_act_2019_iccv} addresses the need for domain-specific action recognition benchmarks, featuring twelve hours of drivers engaged in secondary tasks during both manual and automated driving.\ref{drive-and-act} depicts an overview of the dataset. The dataset includes 9.6 million frames, which is more than four times greater than any other previously published dataset for driver action recognition. The activities are labeled with 83 classes. The dataset is multi-modal, incorporating color, depth, infrared, and 3D body pose data. Six synchronized camera views cover the vehicle cabin to address the issue of limited body visibility. The dataset includes hierarchical activity labels on three levels of abstraction, as well as context annotations.
+\subsection{Data Collection}
+Data was collected in a static driving simulator to ensure safety, with vehicle surroundings simulated and projected on multiple screens around a converted Audi A3. The simulation software used was SILAB.
+Each driver completed twelve different tasks per session, with instructions given on a mounted tablet. Tasks included manual driving, switching to autonomous mode, and responding to unexpected take-over requests. The specific execution of tasks was left to the driver to encourage diverse behavior.
+Fifteen participants (4 female, 11 male) with varied body types, driving styles, and familiarity with automation systems were recorded twice, resulting in 30 driving sessions averaging 24 minutes each.
+\subsection{Recorded Data Streams}
+The dataset includes video data from multiple views and modalities, 3D body and head pose, and features capturing interactions with the car interior. Five near-infrared cameras and a Microsoft Kinect for XBox One were used to capture color, infrared, and depth data. The sensor interfaces were calibrated and synchronized using ROS (Robot Operating System) with global timestamps.
+OpenPose was used to determine the 3D upper body skeleton with 13 joints, triangulated from 2D poses from three frontal views (right-top, front-top, left-top). Missing joints were filled using interpolation. OpenFace was also used to obtain the 3D head pose of the driver from all views except the back camera, selecting the most frontal view for each frame. Car-interior features are provided based on 3D primitives, depicting interactions with storage spaces and car controls. Video frames were manually labeled by annotators on three levels of abstraction, resulting in 83 action classes. The annotation scheme includes high-level scenarios, fine-grained activities, and low-level atomic action units.
+\subsection{Data Splits}
+The dataset is divided into three splits based on the driver's identity, with data from ten subjects for training, two for validation, and three for testing to evaluate generalization to new drivers. Action segments are divided into 3-second chunks for the benchmark, with evaluation scripts provided for comparable results.
+The dataset's vocabulary was created based on a literature review of secondary tasks during driving, expert surveys, and analysis of accident reports and naturalistic car studies. The vocabulary covers eight areas: eating and drinking, clothing and accessories, working, entertainment, entering/exiting and car adjustment, body movement, object manipulation, and using vehicle-internal devices. The vocabulary comprises 83 activity labels across three levels of granularity, forming a complexity- and duration-based hierarchy. It also employs three levels of abstraction:
+\begin{itemize}
+    \item \textbf{Scenarios/Tasks:} The first level consists of twelve tasks that subjects had to complete, which are either typical during manual driving or expected to become common with increasing automation.
+    \item \textbf{Fine-grained Activities:} The second level breaks down scenarios into 34 concise categories that retain a clear semantic meaning.
+    \item \textbf{Atomic Action Units:} The third level portrays basic driver interactions with the environment, detached from long-term semantic meaning and comprising action, object, and location triplets.
+\end{itemize}
+\begin{figure}
+    \centering
+    \includegraphics[width=1\linewidth]{figs/drive_and_act.png}
+    \caption{Overview of the Drive\&Act dataset for driver behavior recognition. The dataset includes 3D skeletons in addition
+to frame-wise hierarchical labels of 9.6 Million frames captured by 6 different views and 3 modalities (RGB, IR and depth). \cite{drive_and_act_2019_iccv}}
+    \label{fig:drive-and-act}
+\end{figure}
 \section{Sliding Window}
 Activity detection in videos is a challenging problem due to the continuous and dynamic nature of video data. Unlike static images, where an object classification model can predict a single label per frame, videos contain temporal dependencies where activities evolve over time.
 
@@ -225,7 +245,7 @@ The Two-Stream Inflated 3D ConvNet (I3D) \cite{carreira2018quovadisactionrecogni
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.8\linewidth]{figs/i3d.png}
+    \includegraphics[width=0.9\linewidth]{figs/i3d.png}
     \caption{The Inflated Inception-V1 architecture (left) and its detailed inception submodule (right). The strides of convolution and pooling
 operators are 1 where not specified, and batch normalization layers, ReLu’s and the softmax at the end are not shown. The theoretical
 sizes of receptive field sizes for a few layers in the network are provided in the format “time,x,y” – the units are frames and pixels. The
@@ -242,7 +262,7 @@ We noticed the main reason for misclassfying each frame to its action is either 
 \end{itemize}
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.8\linewidth]{i3d-acc.png}
+    \includegraphics[width=0.9\linewidth]{figs/i3d-acc.png}
     \caption{Accuracy for recognition task with I3D model on all viewpoints and runs on Kinetic Color category, DriveAndAct dataset}
     \label{fig:i3d-acc}
 \end{figure}
@@ -262,8 +282,7 @@ The transformer-based architecture uses an embedding layer, positional encoding,
 
 The Long Short-Term Memory (LSTM) model was configured with one layer. This vanilla LSTM does not include attention mechanisms, which allow the model to selectively focus on specific time steps rather than relying only on the last hidden state. Stacked LSTMs, which use multiple layers, can model more complex temporal hierarchies but come at a higher computational cost. This vanilla LSTM does not include attention mechanisms, which allow the model to selectively focus on specific time steps rather than relying only on the last hidden state. While the LSTM demonstrated promise in capturing temporal relationships within the data, tuning its hyperparameters (e.g., number of layers, hidden units, and learning rate) was critical for optimization. Despite these efforts, overfitting remained a challenge, particularly on smaller subsets of data, necessitating further exploration of regularization techniques. One model configuration achieved a high training accuracy but a very low test accuracy. The best-performing approach, with additional data manipulations, showed negligible improvement. This study does not claim the approach to be entirely correct, as it involved experimental exploration of both the data, the inputs and the models.
 \section{Conclusion}
-
+Activity detection in videos is a challenging problem due to the continuous and dynamic nature of video data. To address this challenge, our study employs a sliding window approach to analyze sequences of frames, enabling better context preservation and improved detection performance. The approach uses a fixed-size window that moves across the video, capturing localized segments at each step. Each window of frames is processed using a pre-trained I3D model to predict the activity, with model performance evaluated using metrics such as the midpoint hit criteria and Intersection over Union (IoU). While the I3D model achieved an average accuracy of 82.26\%, we also explored advanced model architectures like transformers, temporal CNNs, and recurrent neural networks (RNNs) to further enhance accuracy. Despite some challenges encountered while aligning the input and target dimensions for loss computation, and challenges with batch size mismatches and tensor shape inconsistencies, we lay the groundwork for future research to improve driver activity detection in videos.
 \bibliographystyle{alpha}
 \bibliography{MPL}
-
 \end{document}
