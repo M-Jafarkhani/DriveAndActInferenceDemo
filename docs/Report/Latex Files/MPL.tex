@@ -120,7 +120,7 @@ A video typically consists of thousands of frames, and activities often span acr
 \begin{itemize}
     \item Each window of frames is sent as input to a pre-trained I3D model.
     \item The model infers on the window and predicts the most likely activity to occur in that segment.
-    \item The predicted label is assigned to each frame of the window, along with the confidence scores.
+    \item The predicted label is assigned to each frame of the window, along with the confidence scores (Figure \ref{fig:sliding-window-predictions}).
     \item The activity with the highest confidence score is selected for each frame.
     \item As the window progresses, new predictions are generated, leading to a continuous activity timeline.
 \end{itemize}
@@ -154,7 +154,7 @@ A video typically consists of thousands of frames, and activities often span acr
     \end{subfigure}
 
     \caption{Grid for multiple predictions using Sliding Window.}
-    \label{fig:image-grid}
+    \label{fig:sliding-window-predictions}
 \end{figure}
 
 \section{Metrics}
