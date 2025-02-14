@@ -80,7 +80,7 @@
 
 \begin{abstract}
 Driver activity detection in videos presents unique challenges due to the temporal dependencies inherent in video data. This report addresses these challenges by employing a sliding window approach to analyze sequences of frames, which helps to preserve context and improve detection performance. This method uses a fixed-size window that moves across the video, capturing localized segments. Each window is then processed using a pre-trained I3D model to predict the activity. Model performance is evaluated using metrics such as the midpoint hit criteria and Intersection over Union (IoU). The I3D model, a deep learning architecture that extends 2D convolutional neural networks into 3D, is used to capture spatiotemporal features, achieving an average accuracy of 82.26\%. The study also explores advanced model architectures like transformers, temporal CNNs, and recurrent neural networks (RNNs) to further enhance accuracy. Our code and experiment results are available on
-the \href{https://github.com/M-Jafarkhani/DriveAndActInferenceDemo}{GitHub}.
+the \href{https://github.com/M-Jafarkhani/Drive\&ActInferenceDemo}{GitHub}.
 \end{abstract}
 
 
@@ -90,7 +90,7 @@ Activity detection in videos is a challenging problem because videos contain tem
 
 \section{Dataset Overview}
 
-The Drive\&Act dataset \cite{drive_and_act_2019_iccv} addresses the need for domain-specific action recognition benchmarks, featuring twelve hours of drivers engaged in secondary tasks during both manual and automated driving.\ref{drive-and-act} depicts an overview of the dataset. The dataset includes 9.6 million frames, which is more than four times greater than any other previously published dataset for driver action recognition. The activities are labeled with 83 classes. The dataset is multi-modal, incorporating color, depth, infrared, and 3D body pose data. Six synchronized camera views cover the vehicle cabin to address the issue of limited body visibility. The dataset includes hierarchical activity labels on three levels of abstraction, as well as context annotations.
+The Drive\&Act dataset \cite{drive_and_act_2019_iccv} addresses the need for domain-specific action recognition benchmarks, featuring twelve hours of drivers engaged in secondary tasks during both manual and automated driving. Figure \ref{fig:drive-and-act} depicts an overview of the dataset. The dataset includes 9.6 million frames, which is more than four times greater than any other previously published dataset for driver action recognition. The activities are labeled with 83 classes. The dataset is multi-modal, incorporating color, depth, infrared, and 3D body pose data. Six synchronized camera views cover the vehicle cabin to address the issue of limited body visibility. The dataset includes hierarchical activity labels on three levels of abstraction, as well as context annotations.
 \subsection{Data Collection}
 Data was collected in a static driving simulator to ensure safety, with vehicle surroundings simulated and projected on multiple screens around a converted Audi A3. The simulation software used was SILAB.
 Each driver completed twelve different tasks per session, with instructions given on a mounted tablet. Tasks included manual driving, switching to autonomous mode, and responding to unexpected take-over requests. The specific execution of tasks was left to the driver to encourage diverse behavior.
@@ -113,17 +113,17 @@ The dataset's vocabulary was created based on a literature review of secondary t
 to frame-wise hierarchical labels of 9.6 Million frames captured by 6 different views and 3 modalities (RGB, IR and depth). \cite{drive_and_act_2019_iccv}}
     \label{fig:drive-and-act}
 \end{figure}
-\section{Sliding Window}
+\section{Task 1: Sliding Window}
 Activity detection in videos is a challenging problem due to the continuous and dynamic nature of video data. Unlike static images, where an object classification model can predict a single label per frame, videos contain temporal dependencies where activities evolve over time.
 
-A direct classification approach—where each frame is independently classified—often fails to capture contextual information and temporal dependencies, leading to inaccurate predictions. To address this, we employ a sliding window approach, which allows us to analyze a sequence of frames together rather than in isolation.
+A direct classification approach—where each frame is independently classified—often fails to capture contextual information and temporal dependencies, leading to inaccurate predictions. To address this, we employed a sliding window approach, which allows us to analyze a sequence of frames together rather than in isolation.
 
 The key idea behind this approach is that instead of treating the entire video as a single entity or classifying individual frames separately, we use a fixed-size window that moves over the video, capturing a localized segment at each step. This enables better context preservation and helps improve detection performance.
 
 \subsection{Motivation for Using Sliding Window}
 A video typically consists of thousands of frames, and activities often span across multiple consecutive frames rather than occurring in a single instance. The sliding window approach is designed to address the following challenges:
 \begin{itemize}
-    \item \textbf{Temporal Overlap in Activities}: Many activities start and end gradually rather than having sharp boundaries. Using a window of frames allows the model to capture transitions effectively.
+    \item \textbf{Temporal Overlap in Activities}: Many activities start and end gradually rather than having sharp boundaries. Using a window of frames allows to capture transitions effectively.
     \item \textbf{Context Awareness}: Classifying each frame in isolation lacks temporal context. The sliding window approach retains context from nearby frames, helping the model understand activity progression.
     \item \textbf{Efficiency and Performance Trade-off}: Instead of analyzing every individual frame separately (which would be computationally expensive), grouping frames into a window allows the model to process fewer but more meaningful segments.
 \end{itemize}
@@ -145,7 +145,7 @@ A video typically consists of thousands of frames, and activities often span acr
     \item As the window progresses, new predictions are generated, leading to a continuous activity timeline.
 \end{itemize}
 
-\begin{figure}[h]
+\begin{figure}[ht]
     \centering
     \begin{subfigure}{0.45\textwidth}
         \centering
@@ -178,7 +178,7 @@ A video typically consists of thousands of frames, and activities often span acr
 \end{figure}
 
 \section{Metrics}
-Evaluating activity detection models requires quantitative metrics that measure how well predictions align with ground truth activities. One of the objectives involved was to develop metrics for the sliding window approach to understand how accurate are the predictions. We employ two key metrics as mentioned in the next sections.
+Evaluating activity detection models requires quantitative metrics that measure how well predictions align with ground truth activities. One of the objectives involved was to develop metrics for the sliding window approach to understand how accurate are the predictions. We employed two key metrics, \textbf{Midpoint Hit Criteria} and \textbf{Intersection over Union (IoU)} as described in detail in the next sections.
 
 \subsection{Midpoint Hit Criteria}
 
@@ -204,7 +204,7 @@ To determine whether a prediction is correct, we used the \textbf{midpoint hit c
 
 \subsubsection{Midpoint Hit Analysis: Sliding Window Size vs. Performance}
 
-To evaluate the impact of different sliding window sizes on activity recognition performance, we analyzed precision and recall using the midpoint hit criteria. The figure \ref{fig:sliding-window-predictions} illustrates the mean precision and recall for different test datasets across three sliding window sizes: \textbf{8, 16, and 32}.
+To evaluate the impact of different sliding window sizes on activity recognition performance, we analyzed precision and recall using the midpoint hit criteria. The figure \ref{fig:sliding-window-predictions} illustrates the mean precision and recall for different test datasets across three sliding window sizes: \textbf{8}, \textbf{16}, and \textbf{32}.
 
 
 \textbf{Key Observations:}
@@ -213,12 +213,12 @@ To evaluate the impact of different sliding window sizes on activity recognition
     \item Precision and recall values for a window size of \textbf{16} show intermediate performance, indicating a trade-off between smaller and larger window sizes.
 \end{itemize}
 
-The visualization provides a clear comparison of how varying window sizes influence detection performance. These results suggest that increasing the sliding window size enhances model robustness, but the optimal selection depends on dataset characteristics and activity granularity.
+Figure \ref{fig:metrics} provides a comparison of how varying window sizes influence detection performance. These results suggest that increasing the sliding window size enhances model robustness, but the optimal selection depends on dataset characteristics and activity granularity.
 
-\begin{figure}[h]
+\begin{figure}[ht]
     \centering
-    \includegraphics[width=\linewidth]{Latex Files/figs/metrics.png}
-    \caption{ Performance Metrics on Test Dataset Across Varying Sliding Window Sizes}
+    \includegraphics[width=\linewidth]{figs/metrics.png}
+    \caption{Performance Metrics on Test Dataset Across Varying Sliding Window Sizes}
     \label{fig:metrics}
 \end{figure}
 
@@ -227,11 +227,11 @@ The visualization provides a clear comparison of how varying window sizes influe
 In addition to evaluating sliding window effects, we also analyzed the performance of fine-grained driver activity recognition using the midpoint hit criteria. For this analysis, a sliding window size of 16 was used and evaluated on a test dataset.
 This evaluation measures prediction accuracy based on how well the model identifies activity occurrences, quantified through precision and recall.
 
-The results, shown in Figure~\ref{fig:driver-activities}, highlight variations in performance across different activity classes.
+The results, as shown in Figure~\ref{fig:driver-activities}, highlights variations in performance across different activity classes.
 
-\begin{figure}[h]
+\begin{figure}[ht]
     \centering
-    \includegraphics[width=\linewidth]{Latex Files/figs/metrics2.png}
+    \includegraphics[width=\linewidth]{figs/metrics2.png}
     \caption{Precision and Recall for Fine-Grained Driver Activities}
     \label{fig:driver-activities}
 \end{figure}
@@ -252,18 +252,18 @@ To measure how well the predicted activity windows overlap with the ground truth
 \begin{itemize}
     \item \textbf{Intersection}: The overlapping frames between the ground truth and predicted segment.
     \item \textbf{Union}: The total number of frames covered by both segments.
-    \item The IoU score for each ground truth segment is calculated as:
+    \item The \textbf{IoU score} for each ground truth segment is calculated as:
     \begin{equation}
         \text{IoU} = \frac{\text{Intersection}}{\text{Union}}
     \end{equation}
     \item The \textbf{mean IoU} is obtained by averaging the IoU scores across all ground truth segments.
 \end{itemize}
 
-The figure below (\ref{fig:iou-performance}) illustrates the mean IoU across different test datasets for three sliding window sizes: 8, 16, and 32.
+Figure \ref{fig:iou-performance} illustrates the mean IoU across different test datasets for three sliding window sizes: 8, 16, and 32.
 
-\begin{figure}[h]
+\begin{figure}[ht]
     \centering
-    \includegraphics[width=0.8\linewidth]{Latex Files/figs/iou.png}
+    \includegraphics[width=0.8\linewidth]{figs/iou.png}
     \caption{IoU Performance Across Varying Sliding Window Sizes}
     \label{fig:iou-performance}
 \end{figure}
@@ -292,8 +292,8 @@ The model outputs the following results:
 
 These metrics provide a comprehensive evaluation of the accuracy and localization performance of the model.
 
-\section{Neural Detection Model}
-Manuel and Roitberg \cite{drive_and_act_2019_iccv} evaluated various models for fine-grained driver activity recognition using the DriveAndAct dataset. They tested different approaches, including CNN-based methods (like C3D, P3D ResNet, and I3D) and body pose-based methods. They found out that the Inflated 3D ConvNet (I3D), an extension of the Inception-v1 network with 3D convolutions, achieved the highest accuracy (69.57\% on Validation, and 63.64\% on test) among all tested models for recognizing fine-grained driver activities.
+\section{Task 2: Neural Detection Model}
+Manuel and Roitberg \cite{drive_and_act_2019_iccv} evaluated various models for fine-grained driver activity recognition using the Drive\&Act dataset. They tested different approaches, including CNN-based methods (like C3D, P3D ResNet, and I3D) and body pose-based methods. They found out that the Inflated 3D ConvNet (I3D), an extension of the Inception-v1 network with 3D convolutions, achieved the highest accuracy (69.57\% on Validation, and 63.64\% on test) among all tested models for recognizing fine-grained driver activities.
 I3D also outperformed body pose-based methods, which were less effective in classifying actions despite incorporating spatial and temporal streams.
 In atomic action unit classification, I3D performed best in recognizing actions (56.07\%) and objects (56.15\%), though body pose-based approaches were better at identifying locations (56.5\%).Although for cross-view action recognition, I3D models struggled with domain shifts, performing significantly worse when tested on unseen views.
 \subsection{I3D Model}
@@ -305,7 +305,7 @@ The Two-Stream Inflated 3D ConvNet (I3D) \cite{carreira2018quovadisactionrecogni
     \item \textbf{Two-Stream Configuration}: I3D processes both RGB frames (spatial information) and Optical flow (motion information). These two streams are trained separately and their outputs are fused at the end.
 \end{itemize}
 
-\begin{figure}[h]
+\begin{figure}[ht]
     \centering
     \includegraphics[width=0.9\linewidth]{figs/i3d.png}
     \caption{The Inflated Inception-V1 architecture (left) and its detailed inception submodule (right). The strides of convolution and pooling
@@ -316,16 +316,16 @@ predictions are obtained convolutionally in time and averaged.\cite{carreira2018
 \end{figure}
 
 \subsection{I3D Model as baseline model}
-We utilized the I3D model for recognition in our project. We evaluated a pre-trained I3D model and performed inference on all videos in the Kinetic Color category. Figure \ref{fig:i3d-acc} illustrates the model's accuracy on the DriveAndAct dataset. The dataset includes 15 viewpoints, each comprising two runs, except for viewpoint 9, which lacked annotation for the second run. The average accuracy is 82.26\% for our baseline model.
+We utilized the I3D model for recognition in our project. We evaluated a pre-trained I3D model and performed inference on all videos in the Kinetic Color category. Figure \ref{fig:i3d-acc} illustrates the model's accuracy on the Drive\&Act dataset. The dataset includes 15 viewpoints, each comprising two runs, except for viewpoint 9, which lacked annotation for the second run. The average accuracy is 82.26\% for our baseline model.
 We noticed the main reason for misclassfying each frame to its action is either by:
 \begin{itemize}
     \item \textbf{Latency in Annotation}: Since human-labeled annotations (ground truths) lack a strict consensus on the exact start time of an action, some degree of misclassification is inevitable. In this context, misclassifying an action by at most 10 frames is considered acceptable or, in other words, irreducible.
     \item \textbf{Fast Switching Actions}: The model exhibited rapid transitions between actions, sometimes within less than 3 frames. This behavior was of particular interest to us, and we hypothesized that applying a neural network or transformer architecture on top of the I3D model could help reduce this misclassification.
 \end{itemize}
-\begin{figure}[h]
+\begin{figure}[ht]
     \centering
     \includegraphics[width=0.9\linewidth]{figs/i3d-acc.png}
-    \caption{Accuracy for recognition task with I3D model on all viewpoints and runs on Kinetic Color category, DriveAndAct dataset}
+    \caption{Accuracy for recognition task with I3D model on all viewpoints and runs on Kinetic Color category, Drive\&Act dataset}
     \label{fig:i3d-acc}
 \end{figure}
 \subsection{Extending I3D Model}
