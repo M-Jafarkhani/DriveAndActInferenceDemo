@@ -31,8 +31,7 @@ Save/Visualize: Annotated frames are saved to an output video or displayed.
 
 #### Prequisites  
 ```
-pip install torch torchvision opencv-python numpy  
-pip install pillow  
+pip install torch torchvision opencv-python numpy pillow
 ```
 #### Execution
 ```
