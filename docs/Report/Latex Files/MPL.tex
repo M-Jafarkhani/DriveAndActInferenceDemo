@@ -58,7 +58,7 @@
   Department of Computer Science\\
   University of Stuttgart\\
   Stuttgart, Germany \\
-  \texttt{---@stud.uni-stuttgart.de} \\
+  \texttt{st188427@stud.uni-stuttgart.de} \\
   \AND
   Prateek Chaturvedi \\
   Department of Computer Science\\
@@ -202,6 +202,49 @@ To determine whether a prediction is correct, we used the \textbf{midpoint hit c
     \item Overall precision and recall are computed by aggregating across all activity classes.
 \end{itemize}
 
+\subsubsection{Midpoint Hit Analysis: Sliding Window Size vs. Performance}
+
+To evaluate the impact of different sliding window sizes on activity recognition performance, we analyzed precision and recall using the midpoint hit criteria. The figure \ref{fig:sliding-window-predictions} illustrates the mean precision and recall for different test datasets across three sliding window sizes: \textbf{8, 16, and 32}.
+
+
+\textbf{Key Observations:}
+\begin{itemize}
+    \item Larger sliding window sizes (\textbf{32 frames}) generally yield higher precision and recall compared to smaller window sizes (\textbf{8 frames}).
+    \item Precision and recall values for a window size of \textbf{16} show intermediate performance, indicating a trade-off between smaller and larger window sizes.
+\end{itemize}
+
+The visualization provides a clear comparison of how varying window sizes influence detection performance. These results suggest that increasing the sliding window size enhances model robustness, but the optimal selection depends on dataset characteristics and activity granularity.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=\linewidth]{Latex Files/figs/metrics.png}
+    \caption{ Performance Metrics on Test Dataset Across Varying Sliding Window Sizes}
+    \label{fig:metrics}
+\end{figure}
+
+\subsubsection{Midpoint-Based Analysis: Fine-Grained Driver Activity Performance}
+
+In addition to evaluating sliding window effects, we also analyzed the performance of fine-grained driver activity recognition using the midpoint hit criteria. For this analysis, a sliding window size of 16 was used and evaluated on a test dataset.
+This evaluation measures prediction accuracy based on how well the model identifies activity occurrences, quantified through precision and recall.
+
+The results, shown in Figure~\ref{fig:driver-activities}, highlight variations in performance across different activity classes.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=\linewidth]{Latex Files/figs/metrics2.png}
+    \caption{Precision and Recall for Fine-Grained Driver Activities}
+    \label{fig:driver-activities}
+\end{figure}
+
+\textbf{Key Observations:}
+\begin{itemize}
+    \item Activities such as \textbf{opening a bottle, drinking, and unfastening the seat belt} show high precision and recall, indicating strong prediction accuracy.
+    \item Some activities, like \textbf{opening a backpack and fetching an object}, have lower recall values, suggesting that they are harder to detect consistently.
+    \item \textbf{Using multimedia controls} was the most challenging action, with both precision and recall at low levels, indicating potential misclassification or lack of training data for this category.
+\end{itemize}
+
+By applying the midpoint hit criteria, we ensure a structured evaluation of the model's recognition capability, highlighting both well-detected and challenging activity classes.
+
 \subsection{Intersection over Union (IoU)}
 
 To measure how well the predicted activity windows overlap with the ground truth, we used \textbf{IoU}:
@@ -216,6 +259,25 @@ To measure how well the predicted activity windows overlap with the ground truth
     \item The \textbf{mean IoU} is obtained by averaging the IoU scores across all ground truth segments.
 \end{itemize}
 
+The figure below (\ref{fig:iou-performance}) illustrates the mean IoU across different test datasets for three sliding window sizes: 8, 16, and 32.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\linewidth]{Latex Files/figs/iou.png}
+    \caption{IoU Performance Across Varying Sliding Window Sizes}
+    \label{fig:iou-performance}
+\end{figure}
+
+\textbf{Key Observations:}
+\begin{itemize}
+    \item Larger sliding window sizes (32 frames) generally achieve higher IoU scores, indicating better alignment between predictions and ground truth.
+    \item Smaller window sizes (8 frames) tend to have lower IoU scores, possibly due to fragmented segment predictions.
+    \item The trend is consistent across multiple test datasets, reinforcing the positive impact of larger window sizes on IoU performance.
+\end{itemize}
+
+These results demonstrate that choosing an optimal sliding window size significantly affects overlap accuracy, with larger windows generally providing better segmentation alignment.
+
+\newpage
 \subsection{Final Evaluation Results}
 
 The model outputs the following results:
