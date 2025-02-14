@@ -30,10 +30,13 @@ Annotate Frames: Each frame is overlaid with predictions (e.g., activity and con
 Save/Visualize: Annotated frames are saved to an output video or displayed.    
 
 #### Prequisites  
+```
 pip install torch torchvision opencv-python numpy  
 pip install pillow  
-
+```
 #### Execution
-python InferenceOnSingleVideoMini.py  
+```
+python InferenceOnSingleVideoMini.py
+```
 The script processes a video and generates predictions.
 
