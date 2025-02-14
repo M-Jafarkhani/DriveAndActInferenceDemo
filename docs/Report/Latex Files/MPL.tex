@@ -80,7 +80,7 @@
 
 \begin{abstract}
 Driver activity detection in videos presents unique challenges due to the temporal dependencies inherent in video data. This report addresses these challenges by employing a sliding window approach to analyze sequences of frames, which helps to preserve context and improve detection performance. This method uses a fixed-size window that moves across the video, capturing localized segments. Each window is then processed using a pre-trained I3D model to predict the activity. Model performance is evaluated using metrics such as the midpoint hit criteria and Intersection over Union (IoU). The I3D model, a deep learning architecture that extends 2D convolutional neural networks into 3D, is used to capture spatiotemporal features, achieving an average accuracy of 82.26\%. The study also explores advanced model architectures like transformers, temporal CNNs, and recurrent neural networks (RNNs) to further enhance accuracy. Our code and experiment results are available on
-the \href{https://github.com/M-Jafarkhani/Drive\&ActInferenceDemo}{GitHub}.
+the \href{https://github.com/M-Jafarkhani/DriveAndActInferenceDemo}{GitHub}.
 \end{abstract}
 
 
@@ -127,7 +127,9 @@ A video typically consists of thousands of frames, and activities often span acr
     \item \textbf{Context Awareness}: Classifying each frame in isolation lacks temporal context. The sliding window approach retains context from nearby frames, helping the model understand activity progression.
     \item \textbf{Efficiency and Performance Trade-off}: Instead of analyzing every individual frame separately (which would be computationally expensive), grouping frames into a window allows the model to process fewer but more meaningful segments.
 \end{itemize}
+\newpage
 \subsection{Implementation}
+In this section, we describe the implementation details of our sliding window approach for activity detection. The process involves defining a fixed window size and stride to segment the video into overlapping or non-overlapping windows. Each window is then processed using a pre-trained I3D model to generate activity predictions. The following subsections outline these steps in detail.
 \subsubsection{Window Size and Stride}
 \begin{itemize}
     \item A \textbf{fixed-size window} (e.g. 8, 16, or 32 frames) is defined, which slides across the video.
@@ -277,20 +279,25 @@ Figure \ref{fig:iou-performance} illustrates the mean IoU across different test 
 
 These results demonstrate that choosing an optimal sliding window size significantly affects overlap accuracy, with larger windows generally providing better segmentation alignment.
 
-\newpage
 \subsection{Final Evaluation Results}
-
-The model outputs the following results:
-
-\begin{itemize}
-    \item \textbf{Precision per class (\%)}: Precision values for each activity class.
-    \item \textbf{Recall per class (\%)}: Recall values for each activity class.
-    \item \textbf{Overall Precision}: Aggregated precision across all activities.
-    \item \textbf{Overall Recall}: Aggregated recall across all activities.
-    \item \textbf{Mean IoU}: The average IoU score across all activity segments.
-\end{itemize}
-
-These metrics provide a comprehensive evaluation of the accuracy and localization performance of the model.
+We analyzed different sliding window sizes on activity detection performance, using metrics like precision, recall and IoU, supports the idea that larger window sizes generally improve model robustness, though the optimal selection depends on dataset characteristics and activity granularity. The detailed results in Table \ref{tab:sliding_window_results} indicates this trend.
+  
+\begin{table}[h]
+    \renewcommand{\arraystretch}{1.5}
+    \centering
+    \begin{tabular}{c|c|c|c}
+        \hline
+        \textbf{Window Size} & \textbf{Overall Precision (\%)} & \textbf{Overall Recall (\%)} & \textbf{IoU (\%)} \\
+        \hline
+        8  & 75.39  & 66.11 & 82.37 \\
+        16 & 81.41  & 77.21 & 86.39\\
+        32 & \textbf{87.46}  & \textbf{79.90} & \textbf{87.84}\\
+        \hline
+    \end{tabular}
+    \vspace{10pt}
+    \caption{Average Overall Precision, Recall and IoU for Different Sliding Window Sizes}
+    \label{tab:sliding_window_results}
+\end{table}
 
 \section{Task 2: Neural Detection Model}
 Manuel and Roitberg \cite{drive_and_act_2019_iccv} evaluated various models for fine-grained driver activity recognition using the Drive\&Act dataset. They tested different approaches, including CNN-based methods (like C3D, P3D ResNet, and I3D) and body pose-based methods. They found out that the Inflated 3D ConvNet (I3D), an extension of the Inception-v1 network with 3D convolutions, achieved the highest accuracy (69.57\% on Validation, and 63.64\% on test) among all tested models for recognizing fine-grained driver activities.
@@ -328,7 +335,9 @@ We noticed the main reason for misclassfying each frame to its action is either 
     \caption{Accuracy for recognition task with I3D model on all viewpoints and runs on Kinetic Color category, Drive\&Act dataset}
     \label{fig:i3d-acc}
 \end{figure}
+\newpage
 \subsection{Extending I3D Model}
+To further improve the performance of our detection model, we extended the I3D-based approach by exploring alternative architectures and preprocessing techniques. This section details the preprocessing steps taken to prepare the dataset and the enhancements applied to the model, along with the challenges encountered during training and optimization.
 \subsubsection{Preprocessing}
 The input data utilized in this study was originally trained using the I3D model, which generated class probabilities as output. These probabilities were stored in .pt files for subsequent processing. To prepare the data for our detection model, we computed the argmax of the arrays containing the class probabilities, thereby converting them into discrete class labels. These labels were then used as input for training the detection model.
 
@@ -336,13 +345,11 @@ Due to computational constraints, we processed each video in the dataset individ
 
 The preprocessing phase involved converting the class probabilities into discrete labels using the numpy argmax function. Additionally, batch processing techniques were employed to optimize memory usage, ensuring efficient handling of large datasets during training and inference. This approach facilitated the effective training of the detection model while mitigating computational limitations.
 \subsubsection{Model Enhancements and Challenges}
-To enhance accuracy, several advanced model architectures were explored, including transformers, temporal convolutional neural networks (CNNs), and recurrent neural networks (RNNs). A major challenge encountered was aligning the input and target dimensions for loss computation. Additionally, batch size mismatches and tensor shape inconsistencies required careful debugging and adjustments to the data pipeline. Some approaches achieved high training accuracies; however, test accuracy remained significantly lower.
+Several model architectures were explored, including transformers, CNNs, and RNNs, to improve accuracy. Key challenges included aligning input-target dimensions, batch size mismatches, and tensor shape inconsistencies. While some models achieved high training accuracy, test accuracy remained low.
 
-To stabilize training and mitigate overfitting, techniques such as early stopping and batch normalization were implemented. Early stopping prevented unnecessary overtraining by halting training once validation performance plateaued; however, accuracy did not improve. Increasing the training data and performing hyperparameter tuning also had minimal impact. In some cases, modifications to the model architecture even reduced the accuracy of the training.
+Techniques like early stopping, batch normalization, and hyperparameter tuning had minimal impact on improving test performance. The transformer model, designed for long-range dependencies, trained efficiently but failed to learn features effectively. A single-layer LSTM showed promise in capturing temporal relationships but struggled with overfitting, even with tuning and regularization.
 
-The transformer-based architecture uses an embedding layer, positional encoding, a stack of Transformer encoder layers, and a final linear layer for classification. If the model needs to consider the entire sequence (e.g., correlations across distant frames), the transformer should excel hence this approach. Training was faster because the sequence is processed as a whole rather than step by step and the self-attention mechanism captured long-range relationships more effectively. However, our training accuracy was very low indicating that our model was not able to learn the features properly.
-
-The Long Short-Term Memory (LSTM) model was configured with one layer. This vanilla LSTM does not include attention mechanisms, which allow the model to selectively focus on specific time steps rather than relying only on the last hidden state. Stacked LSTMs, which use multiple layers, can model more complex temporal hierarchies but come at a higher computational cost. This vanilla LSTM does not include attention mechanisms, which allow the model to selectively focus on specific time steps rather than relying only on the last hidden state. While the LSTM demonstrated promise in capturing temporal relationships within the data, tuning its hyperparameters (e.g., number of layers, hidden units, and learning rate) was critical for optimization. Despite these efforts, overfitting remained a challenge, particularly on smaller subsets of data, necessitating further exploration of regularization techniques. One model configuration achieved a high training accuracy but a very low test accuracy. The best-performing approach, with additional data manipulations, showed negligible improvement. This study does not claim the approach to be entirely correct, as it involved experimental exploration of both the data, the inputs and the models.
+Despite various optimizations and data manipulations, performance improvements were marginal. This study remains exploratory, with further refinement needed for better generalization.
 \section{Conclusion}
 Activity detection in videos is a challenging problem due to the continuous and dynamic nature of video data. To address this challenge, our study employs a sliding window approach to analyze sequences of frames, enabling better context preservation and improved detection performance. The approach uses a fixed-size window that moves across the video, capturing localized segments at each step. Each window of frames is processed using a pre-trained I3D model to predict the activity, with model performance evaluated using metrics such as the midpoint hit criteria and Intersection over Union (IoU). While the I3D model achieved an average accuracy of 82.26\%, we also explored advanced model architectures like transformers, temporal CNNs, and recurrent neural networks (RNNs) to further enhance accuracy. Despite some challenges encountered while aligning the input and target dimensions for loss computation, and challenges with batch size mismatches and tensor shape inconsistencies, we lay the groundwork for future research to improve driver activity detection in videos.
 \bibliographystyle{alpha}
